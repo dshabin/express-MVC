@@ -16,6 +16,7 @@ controller.create = async (req, res) => {
           return handleError(res, err.message , 99);
         }
         if(user){
+          req.session.userId = user._id;
           return createResponse(res , user , 0)
         }
       });
@@ -39,6 +40,7 @@ controller.auth = async (req, res) => {
       if(user){
       bcrypt.compare(userToAuth.password, user.password, function (err, result) {
         if (result === true) {
+          req.session.userId = user._id;
           return createResponse(res , user , 0)
         } else {
           return handleError(res, "Bad Password." , 200);
@@ -58,19 +60,54 @@ catch(err) {
 //protected route sample
 controller.protected = async (req, res) => {
   {
-    User.findById(req.session.userId)
+    UsersModel.findById(req.session.userId)
     .exec(function (error, user) {
+      console.log(req)
       if (error) {
           return res.send('Error->' + error )
       } else {
         if (user === null) {
-          return res.send('=== Unauthorized Access. ===')
+          console.log('unauthed')
+          return res.send({"res" : "=== Unauthorized Access. ==="})
         } else {
-          return res.send('=== Auth Success ===')
+          console.log('authed')
+          return res.send({"res" : "=== Auth Success ===" })
         }
       }
     });
   }
 }
+
+controller.logout = async (req, res) => {
+  {
+    UsersModel.findById(req.session.userId)
+    .exec(function (error, user) {
+      console.log(req)
+      if (error) {
+          return res.send('Error->' + error )
+      } else {
+        if (user === null) {
+          console.log('unauthed')
+          return res.send({"res" : "=== Unauthorized Access. ==="})
+        } else {
+          console.log('authed')
+          req.session.destroy(function(err) {
+            if(err) {
+              return res.send({"res" : "logout-error" })
+            } else {
+              return res.send({"res" : "=== Auth Success === , == Logout Sucess ===" })
+            }
+          });
+        }
+      }
+    });
+  }
+}
+
+
+
+
+
+
 
 export default controller;
